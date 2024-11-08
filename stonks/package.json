@@ -19,6 +19,6 @@
     "ts-node": "^10.4.0",
     "typescript": "^5.5.4",
     "zod": "^3.23.8", 
-    "@dainprotocol/client": "^1.0.41"
+    "@dainprotocol/cli": "^1.0.31"
   }
 }
