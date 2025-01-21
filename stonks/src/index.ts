@@ -475,9 +475,18 @@ const getMarketOverviewWidget: ServicePinnable = {
         ],
         rows: results.map(result => ({
           name: result.name,
-          price: `$${result.price}`,
-          change: `${result.isPositive ? '+' : ''}$${result.change}`,
-          changePercent: `${result.isPositive ? '+' : ''}${result.changePercent}%`,
+          price: result.price === "N/A" ? "N/A" : `$${Number(result.price).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}`,
+          change: `${result.isPositive ? '+' : ''}$${Number(result.change).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}`,
+          changePercent: `${result.isPositive ? '+' : ''}${Number(result.changePercent).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}%`,
           style: {
             change: {
               color: result.isPositive ? '#22C55E' : '#EF4444'
@@ -505,13 +514,15 @@ const getMarketOverviewWidget: ServicePinnable = {
       const chartData = {
         type: "line" as const,
         title: "S&P 500",
-        description: "30-day price history", // Updated description
+        description: "30-day price history",
         data: (aggs.results ?? []).map(bar => ({
           time: new Date(bar.t).toLocaleDateString([], {
             month: 'short',
             day: 'numeric'
           }),
-          price: bar.c
+          // Round to 2 decimal places when setting the price
+          price: Number(Number(bar.c).toFixed(2)),
+          label: `$${Number(Number(bar.c).toFixed(2)).toLocaleString()}`
         })).filter(point => point.price),
         config: {
           height: 200,
@@ -519,12 +530,15 @@ const getMarketOverviewWidget: ServicePinnable = {
           margin: { left: 8, right: 8, top: 20, bottom: 20 },
           yAxis: {
             minPadding: 0.1,
-            maxPadding: 0.1
+            maxPadding: 0.1,
+            // Simpler formatting for y-axis
+            format: (value: number) => `$${Math.round(value)}`
           }
         },
         dataKeys: {
           x: "time",
-          y: "price"
+          y: "price",
+          tooltip: "label"
         }
       };
 
