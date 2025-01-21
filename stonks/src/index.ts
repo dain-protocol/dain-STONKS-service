@@ -602,7 +602,36 @@ const dainService = defineDAINService({
   },
 
   tools: [getStockPriceConfig, getStockNewsConfig, getStockChartConfig, getStockTickerDetailsConfig, getStockDividendsConfig, getStockSplitsConfig],
-  pinnables: [getMarketOverviewWidget]
+  pinnables: [getMarketOverviewWidget],
+  exampleQueries: [
+    {
+      category: "Market Overview",
+      queries: [
+        "What is the current status of the S&P 500?",
+        "How has the NASDAQ performed over the last 30 days?",
+        "What are the key drivers of the Dow Jones today?",
+        "Show me the Russell 2000's performance over the last month."
+      ]
+    },
+    {
+      category: "Stock Price",
+      queries: [
+        "What is the current price of Tesla (TSLA)?",
+        "How has Apple's stock (AAPL) performed over the last week?",
+        "What is the latest news on Amazon (AMZN)?",
+        "Show me the 52-week high and low for Tesla (TSLA)."
+      ]
+    },
+    {
+      category: "Stock Data",
+      queries: [
+        "What are the dividends for Tesla (TSLA) over the last year?",
+        "Show me the stock splits for Apple (AAPL) over the last 5 years.",
+        "What is the latest earnings report for Amazon (AMZN)?",
+        "How has the market cap of Tesla (TSLA) changed over the last 3 years?"
+      ]
+    }
+  ]
 });
 
 dainService.startNode({ port: Number(process.env.PORT) || 2022 }).then(() => {

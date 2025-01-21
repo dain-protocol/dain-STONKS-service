@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@dainprotocol/cli": "^1.0.31",
-    "@dainprotocol/service-sdk": "^1.0.73",
+    "@dainprotocol/service-sdk": "^1.0.75",
     "@polygon.io/client-js": "^7.3.2",
     "@types/express": "^4.17.13",
     "@types/node": "^22.5.4",
