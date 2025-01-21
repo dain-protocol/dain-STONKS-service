@@ -7,6 +7,7 @@ import {
   ServiceConfig,
   ToolboxConfig,
   ServiceContext,
+  ServicePinnable,
 } from "@dainprotocol/service-sdk";
 
 const getStockPriceConfig: ToolConfig = {
@@ -418,6 +419,160 @@ const getStockSplitsConfig: ToolConfig = {
   }
 };
 
+const getMarketOverviewWidget: ServicePinnable = {
+  id: "marketOverview",
+  name: "Market Overview",
+  description: "Shows current status of major market indices",
+  type: "widget",
+  label: "Markets",
+  icon: "chart-line",
+  getWidget: async () => {
+    const client = restClient(process.env.POLYGON_API_KEY);
+    
+    // Using ETFs that track major indices - these work with basic plan
+    const indices = [
+      { ticker: "DIA", name: "Dow Jones" },
+      { ticker: "SPY", name: "S&P 500" },
+      { ticker: "QQQ", name: "NASDAQ" },
+      { ticker: "IWM", name: "Russell 2000" }
+    ];
+
+    try {
+      const results = await Promise.all(
+        indices.map(async ({ ticker, name }) => {
+          const prevClose = await client.stocks.previousClose(ticker);
+          const data = prevClose.results?.[0];
+          
+          if (!data) {
+            return {
+              name,
+              price: "N/A",
+              change: "0.00",
+              changePercent: "0.00",
+              isPositive: true
+            };
+          }
+
+          const change = data.c ? data.c - data.o : 0;
+          const changePercent = ((change) / (data.o ?? 1) * 100).toFixed(2);
+          
+          return {
+            name,
+            price: data.c?.toFixed(2) ?? "N/A",
+            change: change.toFixed(2),
+            changePercent,
+            isPositive: change >= 0
+          };
+        })
+      );
+
+      const tableData = {
+        columns: [
+          { key: "name", header: "Index", type: "text", width: "30%" },
+          { key: "price", header: "Price", type: "text", width: "25%" },
+          { key: "change", header: "Change", type: "text", width: "25%" },
+          { key: "changePercent", header: "%", type: "text", width: "20%" }
+        ],
+        rows: results.map(result => ({
+          name: result.name,
+          price: `$${result.price}`,
+          change: `${result.isPositive ? '+' : ''}$${result.change}`,
+          changePercent: `${result.isPositive ? '+' : ''}${result.changePercent}%`,
+          style: {
+            change: {
+              color: result.isPositive ? '#22C55E' : '#EF4444'
+            },
+            changePercent: {
+              color: result.isPositive ? '#22C55E' : '#EF4444'
+            }
+          }
+        }))
+      };
+
+      // Use daily aggregates instead of minutes
+      const to = new Date();
+      const from = new Date();
+      from.setDate(from.getDate() - 30); // Last 30 days
+      
+      const aggs = await client.stocks.aggregates(
+        'SPY',
+        1, // 1 day intervals
+        'day', // Changed from 'minute' to 'day'
+        from.toISOString().split('T')[0],
+        to.toISOString().split('T')[0]
+      );
+
+      const chartData = {
+        type: "line" as const,
+        title: "S&P 500",
+        description: "30-day price history", // Updated description
+        data: (aggs.results ?? []).map(bar => ({
+          time: new Date(bar.t).toLocaleDateString([], {
+            month: 'short',
+            day: 'numeric'
+          }),
+          price: bar.c
+        })).filter(point => point.price),
+        config: {
+          height: 200,
+          colors: ["#3B82F6"],
+          margin: { left: 8, right: 8, top: 20, bottom: 20 },
+          yAxis: {
+            minPadding: 0.1,
+            maxPadding: 0.1
+          }
+        },
+        dataKeys: {
+          x: "time",
+          y: "price"
+        }
+      };
+
+      // Only include chart if we have data
+      const children = [
+        {
+          type: "table",
+          uiData: JSON.stringify(tableData)
+        }
+      ];
+
+      if (chartData.data.length > 0) {
+        children.push({
+          type: "chart",
+          uiData: JSON.stringify(chartData)
+        });
+      }
+
+      return {
+        text: `Market Overview - S&P 500: ${results[1].changePercent}%`,
+        data: results,
+        ui: {
+          type: "div",
+          uiData: JSON.stringify({
+            style: {
+              padding: "12px",
+              backgroundColor: "#ffffff",
+              borderRadius: "8px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.12)"
+            }
+          }),
+          children
+        }
+      };
+    } catch (error) {
+      console.error("Error fetching market overview:", error);
+      return {
+        text: "Failed to load market overview",
+        data: null,
+        ui: {
+          type: "p",
+          children: "Unable to load market data at this time. Please check your Polygon.io API key and permissions."
+        }
+      };
+    }
+  }
+};
+
 const dainService = defineDAINService({
   metadata: {
     title: "Stock Prices and Data Service",
@@ -433,6 +588,7 @@ const dainService = defineDAINService({
   },
 
   tools: [getStockPriceConfig, getStockNewsConfig, getStockChartConfig, getStockTickerDetailsConfig, getStockDividendsConfig, getStockSplitsConfig],
+  pinnables: [getMarketOverviewWidget]
 });
 
 dainService.startNode({ port: Number(process.env.PORT) || 2022 }).then(() => {
