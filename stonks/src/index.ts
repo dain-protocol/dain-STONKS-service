@@ -29,32 +29,44 @@ const getStockPriceConfig: ToolConfig = {
 
     const client = restClient(process.env.POLYGON_API_KEY);
     
-    // Get previous day's close data
-    const prevClose = await client.stocks.previousClose(ticker);
-    const prevCloseData = prevClose.results[0];
-
-    // Get 24h aggregates with 30 min intervals
-    const to = new Date();
-    const from = new Date(to.getTime() - (24 * 60 * 60 * 1000)); // 24h ago
+    // Get last 5 trading days of data
+    const now = new Date();
+    const to = now.toISOString().split('T')[0];  // Use today as end date
+    
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 7); // Go back 7 days to ensure we get 5 trading days
+    const from = fiveDaysAgo.toISOString().split('T')[0];
+    
+    console.log(`Fetching daily data from ${from} to ${to} for ${ticker}`);
     
     const aggs = await client.stocks.aggregates(
       ticker,
-      30,
-      'minute',
-      from.toISOString().split('T')[0],
-      to.toISOString().split('T')[0]
+      1,
+      'day',
+      from,
+      to,
+      {
+        sort: 'desc',
+        limit: 10  // Increased limit to make sure we get enough data
+      }
     );
 
-    const change = prevCloseData.c ? prevCloseData.c - prevCloseData.o : 0;
-    const changePercent = ((change) / (prevCloseData.o ?? 1) * 100).toFixed(2);
+    const latestData = aggs.results?.[0];
+    if (!latestData) {
+      throw new Error(`No data available for ${ticker}`);
+    }
 
+    const change = latestData.c - latestData.o;
+    const changePercent = ((change) / latestData.o * 100).toFixed(2);
+
+    // Use the same data for the chart
     const chartData = {
       type: "line" as const,
-      title: `${ticker} 24 Hour Price History`,
-      description: `Price movement over the last 24 hours`,
-      data: (aggs.results ?? []).map(bar => ({
-        time: new Date(bar.t).toLocaleTimeString(),
-        price: bar.c ?? 0
+      title: `${ticker} 5-Day Price History`,
+      description: `Price movement over the last 5 trading days`,
+      data: [...(aggs.results ?? [])].reverse().map(bar => ({
+        time: new Date(bar.t).toLocaleDateString(),
+        price: bar.c
       })),
       config: {
         height: 350,
@@ -90,21 +102,21 @@ const getStockPriceConfig: ToolConfig = {
         }
       ],
       rows: [
-        { metric: "Volume", value: (prevCloseData.v ?? 0).toLocaleString() },
-        { metric: "Open", value: `$${prevCloseData.o?.toFixed(2) ?? 0}` },
-        { metric: "High", value: `$${prevCloseData.h?.toFixed(2) ?? 0}` },
-        { metric: "Low", value: `$${prevCloseData.l?.toFixed(2) ?? 0}` },
-        { metric: "VWAP", value: `$${prevCloseData.vw?.toFixed(2) ?? 0}` }
+        { metric: "Volume", value: latestData.v.toLocaleString() },
+        { metric: "Open", value: `$${latestData.o.toFixed(2)}` },
+        { metric: "High", value: `$${latestData.h.toFixed(2)}` },
+        { metric: "Low", value: `$${latestData.l.toFixed(2)}` },
+        { metric: "VWAP", value: `$${latestData.vw.toFixed(2)}` }
       ]
     };
 
     return {
-      text: `${ticker} is trading at $${prevCloseData.c?.toFixed(2)}. Today's change: ${changePercent}%`,
+      text: `${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`,
       data: {
-        price: prevCloseData.c ?? 0,
-        high: prevCloseData.h ?? 0,
-        low: prevCloseData.l ?? 0,
-        volume: prevCloseData.v ?? 0,
+        price: latestData.c,
+        high: latestData.h,
+        low: latestData.l,
+        volume: latestData.v,
         change,
         changePercent: parseFloat(changePercent),
       },
@@ -112,22 +124,16 @@ const getStockPriceConfig: ToolConfig = {
         type: "div",
         uiData: JSON.stringify({
           title: `${ticker} Stock Price and Stats`,
-          content: `${ticker} is trading at $${prevCloseData.c?.toFixed(2)}. Today's change: ${changePercent}%`
+          content: `${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`
         }),
         children: [{
           type: "chart",
           uiData: JSON.stringify(chartData)
-        }, 
-        /*
-        ugly tbh
+        },
         {
           type: "table",
           uiData: JSON.stringify(tableData)
-        }
-          */
-
-      
-      ]
+        }]
       }
     };
   },
