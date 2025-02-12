@@ -11,6 +11,9 @@ dependencies:
   '@dainprotocol/service-sdk':
     specifier: ^1.0.75
     version: 1.0.75(react@18.3.1)(svelte@5.1.12)(vue@3.5.12)
+  '@dainprotocol/utils':
+    specifier: ^0.0.33
+    version: 0.0.33(react@18.3.1)(svelte@5.1.12)(vue@3.5.12)
   '@polygon.io/client-js':
     specifier: ^7.3.2
     version: 7.3.2
@@ -699,6 +702,51 @@ packages:
       - vue
     dev: false
 
+  /@dainprotocol/service-sdk@1.0.85(react@18.3.1)(svelte@5.1.12)(vue@3.5.12):
+    resolution: {integrity: sha512-kRUUZSrD7XX+5EmDQcRoy6oOefj1ziX+bgltmR5eykGPIHMu8pSlGNcGEbSqY+tZ8OobN7IXSD023LuEjCPJFA==}
+    dependencies:
+      '@ai-sdk/anthropic': 0.0.23(zod@3.23.8)
+      '@ai-sdk/openai': 0.0.33(zod@3.23.8)
+      '@hono/node-server': 1.13.5(hono@4.6.9)
+      '@noble/curves': 1.6.0
+      '@noble/ed25519': 2.1.0
+      '@noble/hashes': 1.5.0
+      '@paralleldrive/cuid2': 2.2.2
+      '@solana/web3.js': 1.95.4
+      '@stripe/stripe-js': 4.9.0
+      '@types/body-parser': 1.19.5
+      '@types/bs58': 4.0.4
+      '@types/supertest': 6.0.2
+      ai: 3.4.33(react@18.3.1)(svelte@5.1.12)(vue@3.5.12)(zod@3.23.8)
+      axios: 1.7.7
+      body-parser: 1.20.3
+      bs58: 5.0.0
+      express: 4.21.1
+      hono: 4.6.9
+      ioredis: 5.5.0
+      iron-session: 8.0.4
+      json-schema: 0.4.0
+      stripe: 17.3.1
+      supertest: 7.0.0
+      telegram: 2.26.16
+      tslib: 2.8.1
+      ws: 8.18.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      zod: 3.23.8
+      zod-to-json-schema: 3.23.5(zod@3.23.8)
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - encoding
+      - openai
+      - react
+      - solid-js
+      - sswr
+      - supports-color
+      - svelte
+      - utf-8-validate
+      - vue
+    dev: false
+
   /@dainprotocol/tunnel@1.0.2(@babel/core@7.26.0)(esbuild@0.23.1)(react@18.3.1)(svelte@5.1.12)(vue@3.5.12):
     resolution: {integrity: sha512-dqZ7Rzm1IZ55xGJGQbHCyP5gZKmG14nq1FSCzNIu7JkFNrTt5A/qM7gvIdLTh2SK2KeZTGEfTlx5zGG10C2LyA==}
     engines: {node: 20.7.0}
@@ -737,6 +785,26 @@ packages:
       - esbuild
       - node-fetch
       - node-notifier
+      - openai
+      - react
+      - solid-js
+      - sswr
+      - supports-color
+      - svelte
+      - utf-8-validate
+      - vue
+    dev: false
+
+  /@dainprotocol/utils@0.0.33(react@18.3.1)(svelte@5.1.12)(vue@3.5.12):
+    resolution: {integrity: sha512-+5BwZ1s8NOHvrJOb+dlC5VOUledONh2lEXgKypzurODB2AnZmj3VK04kOnVcicay/kPxiR426rJaW5LCzF2ddw==}
+    dependencies:
+      '@dainprotocol/service-sdk': 1.0.85(react@18.3.1)(svelte@5.1.12)(vue@3.5.12)
+      ioredis: 5.5.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - encoding
       - openai
       - react
       - solid-js
@@ -3168,6 +3236,23 @@ packages:
 
   /ioredis@5.4.1:
     resolution: {integrity: sha512-2YZsvl7jopIa1gaePkeMtd9rAcSjOOjPtpcLlOeusyO+XH2SK5ZcT+UCrElPP+WVIInh2TzeI4XW9ENaSLVVHA==}
+    engines: {node: '>=12.22.0'}
+    dependencies:
+      '@ioredis/commands': 1.2.0
+      cluster-key-slot: 1.1.2
+      debug: 4.3.7
+      denque: 2.1.0
+      lodash.defaults: 4.2.0
+      lodash.isarguments: 3.1.0
+      redis-errors: 1.2.0
+      redis-parser: 3.0.0
+      standard-as-callback: 2.1.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /ioredis@5.5.0:
+    resolution: {integrity: sha512-7CutT89g23FfSa8MDoIFs2GYYa0PaNiW/OrT+nRyjRXHDZd17HmIgy+reOQ/yhh72NznNjGuS8kbCAcA4Ro4mw==}
     engines: {node: '>=12.22.0'}
     dependencies:
       '@ioredis/commands': 1.2.0

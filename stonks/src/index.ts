@@ -10,6 +10,13 @@ import {
   ServicePinnable,
 } from "@dainprotocol/service-sdk";
 
+import {
+  CardUIBuilder,
+  DataGridUIBuilder,
+  ChartUIBuilder,
+  TableUIBuilder,
+} from '@dainprotocol/utils';
+
 const getStockPriceConfig: ToolConfig = {
   id: "get-stock-price",
   name: "Get Stock Price",
@@ -59,56 +66,39 @@ const getStockPriceConfig: ToolConfig = {
     const change = latestData.c - latestData.o;
     const changePercent = ((change) / latestData.o * 100).toFixed(2);
 
-    // Use the same data for the chart
-    const chartData = {
-      type: "line" as const,
-      title: `${ticker} 5-Day Price History`,
-      description: `Price movement over the last 5 trading days`,
-      data: [...(aggs.results ?? [])].reverse().map(bar => ({
+    const chartBuilder = new ChartUIBuilder()
+      .type('line')
+      .title(`${ticker} 5-Day Price History`)
+      .description('Price movement over the last 5 trading days')
+      .chartData([...(aggs.results ?? [])].reverse().map(bar => ({
         time: new Date(bar.t).toLocaleDateString(),
         price: bar.c
-      })),
-      config: {
-        height: 350,
-        colors: ["#3B82F6"],
-        margin: {
-          left: 12,
-          right: 12
-        }
-      },
-      dataKeys: {
-        x: "time",
-        y: "price"
-      },
-      trend: {
-        value: parseFloat(changePercent),
-        text: `${changePercent}% change`
-      }
-    };
+      })))
+      .dataKeys({
+        x: 'time',
+        y: 'price',
+        name: 'Price'
+      })
+      .trend(parseFloat(changePercent), `${changePercent}% change`);
 
-    const tableData = {
-      columns: [
-        {
-          key: "metric",
-          header: "Metric",
-          type: "text",
-          width: "40%"
-        },
-        {
-          key: "value", 
-          header: "Value",
-          type: "text",
-          width: "60%"
-        }
-      ],
-      rows: [
-        { metric: "Volume", value: latestData.v.toLocaleString() },
-        { metric: "Open", value: `$${latestData.o.toFixed(2)}` },
-        { metric: "High", value: `$${latestData.h.toFixed(2)}` },
-        { metric: "Low", value: `$${latestData.l.toFixed(2)}` },
-        { metric: "VWAP", value: `$${latestData.vw.toFixed(2)}` }
-      ]
-    };
+    const tableBuilder = new TableUIBuilder()
+      .addColumns([
+        { key: 'metric', header: 'Metric', type: 'text' },
+        { key: 'value', header: 'Value', type: 'text' }
+      ])
+      .rows([
+        { metric: 'Volume', value: latestData.v.toLocaleString() },
+        { metric: 'Open', value: `$${latestData.o.toFixed(2)}` },
+        { metric: 'High', value: `$${latestData.h.toFixed(2)}` },
+        { metric: 'Low', value: `$${latestData.l.toFixed(2)}` },
+        { metric: 'VWAP', value: `$${latestData.vw.toFixed(2)}` }
+      ]);
+
+    const cardBuilder = new CardUIBuilder()
+      .title(`${ticker} Stock Price and Stats`)
+      .content(`${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`)
+      .addChild(chartBuilder.build())
+      .addChild(tableBuilder.build());
 
     return {
       text: `${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`,
@@ -120,21 +110,7 @@ const getStockPriceConfig: ToolConfig = {
         change,
         changePercent: parseFloat(changePercent),
       },
-      ui: {
-        type: "div",
-        uiData: JSON.stringify({
-          title: `${ticker} Stock Price and Stats`,
-          content: `${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`
-        }),
-        children: [{
-          type: "chart",
-          uiData: JSON.stringify(chartData)
-        },
-        {
-          type: "table",
-          uiData: JSON.stringify(tableData)
-        }]
-      }
+      ui: cardBuilder.build()
     };
   },
 };
@@ -169,50 +145,26 @@ const getStockNewsConfig: ToolConfig = {
       url: article.article_url,
     }));
 
-    const table = {
-      columns: [
-        {
-          key: "publisher",
-          header: "Source",
-          type: "text",
-          width: "20%"
-        },
-        {
-          key: "title", 
-          header: "Title",
-          type: "text",
-          width: "50%"
-        },
-        {
-          key: "url",
-          header: "Link",
-          type: "link",
-          width: "15%"
-        },
-        {
-          key: "timestamp",
-          header: "Published",
-          type: "text", 
-          width: "15%"
-        }
-      ],
-      rows: articles.map(article => ({
+    const tableBuilder = new TableUIBuilder()
+      .addColumns([
+        { key: 'publisher', header: 'Source', type: 'text' },
+        { key: 'title', header: 'Title', type: 'text' },
+        { key: 'url', header: 'Link', type: 'link' },
+        { key: 'timestamp', header: 'Published', type: 'text' }
+      ])
+      .rows(articles.map(article => ({
         ...article,
         url: {
-          text: "Read More",
+          text: 'Read More',
           url: article.url
         },
         timestamp: new Date(article.timestamp).toLocaleDateString()
-      }))
-    };
+      })));
 
     return {
       text: `Found ${articles.length} news articles for ${ticker}`,
       data: { articles },
-      ui: {
-        type: "table",
-        uiData: JSON.stringify(table)
-      },
+      ui: tableBuilder.build()
     };
   },
 };
@@ -256,38 +208,27 @@ const getStockChartConfig: ToolConfig = {
       to
     );
 
-    const chartData = {
-      type: "line" as const,
-      title: `${ticker} Price History`,
-      description: `From ${from} to ${to}`,
-      data: response.results.map(result => ({
+    const chartBuilder = new ChartUIBuilder()
+      .type('line')
+      .title(`${ticker} Price History`)
+      .description(`From ${from} to ${to}`)
+      .chartData(response.results.map(result => ({
         date: new Date(result.t).toLocaleDateString(),
         price: result.c
-      })),
-      config: {
-        height: 350,
-        colors: ["#3B82F6"],
-        margin: {
-          left: 12,
-          right: 12
-        }
-      },
-      dataKeys: {
-        x: "date",
-        y: "price"
-      },
-      footer: `${timespan}ly price data with multiplier ${multiplier}`
-    };
+      })))
+      .dataKeys({
+        x: 'date',
+        y: 'price',
+        name: 'Price'
+      })
+      .footer(`${timespan}ly price data with multiplier ${multiplier}`);
 
     return {
       text: `Retrieved historical data for ${ticker} from ${from} to ${to}`,
       data: {
         results: response.results,
       },
-      ui: {
-        type: "chart",
-        uiData: JSON.stringify(chartData)
-      },
+      ui: chartBuilder.build()
     };
   },
 };
@@ -313,28 +254,24 @@ const getStockTickerDetailsConfig: ToolConfig = {
     const response = await client.reference.tickerDetails(ticker);
     const details = response.results;
 
-    const tableData = {
-      columns: [
-        { key: "field", header: "Field", type: "text", width: "40%" },
-        { key: "value", header: "Value", type: "text", width: "60%" }
-      ],
-      rows: [
-        { field: "Name", value: details.name },
-        { field: "Description", value: details.description },
-        { field: "Market Cap", value: details.market_cap?.toLocaleString() },
-        { field: "Exchange", value: details.primary_exchange },
-        { field: "Industry", value: details.sic_description },
-        { field: "Homepage", value: details.homepage_url }
-      ]
-    };
+    const tableBuilder = new TableUIBuilder()
+      .addColumns([
+        { key: 'field', header: 'Field', type: 'text' },
+        { key: 'value', header: 'Value', type: 'text' }
+      ])
+      .rows([
+        { field: 'Name', value: details.name },
+        { field: 'Description', value: details.description },
+        { field: 'Market Cap', value: details.market_cap?.toLocaleString() },
+        { field: 'Exchange', value: details.primary_exchange },
+        { field: 'Industry', value: details.sic_description },
+        { field: 'Homepage', value: details.homepage_url }
+      ]);
 
     return {
       text: `${ticker} (${details.name}) is listed on ${details.primary_exchange}`,
       data: details,
-      ui: {
-        type: "table",
-        uiData: JSON.stringify(tableData)
-      }
+      ui: tableBuilder.build()
     };
   }
 };
@@ -472,14 +409,14 @@ const getMarketOverviewWidget: ServicePinnable = {
         })
       );
 
-      const tableData = {
-        columns: [
-          { key: "name", header: "Index", type: "text", width: "30%" },
-          { key: "price", header: "Price", type: "text", width: "25%" },
-          { key: "change", header: "Change", type: "text", width: "25%" },
-          { key: "changePercent", header: "%", type: "text", width: "20%" }
-        ],
-        rows: results.map(result => ({
+      const tableBuilder = new TableUIBuilder()
+        .addColumns([
+          { key: 'name', header: 'Index', type: 'text' },
+          { key: 'price', header: 'Price', type: 'text' },
+          { key: 'change', header: 'Change', type: 'text' },
+          { key: 'changePercent', header: '%', type: 'text' }
+        ])
+        .rows(results.map(result => ({
           name: result.name,
           price: result.price === "N/A" ? "N/A" : `$${Number(result.price).toLocaleString(undefined, {
             minimumFractionDigits: 2,
@@ -492,92 +429,33 @@ const getMarketOverviewWidget: ServicePinnable = {
           changePercent: `${result.isPositive ? '+' : ''}${Number(result.changePercent).toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-          })}%`,
-          style: {
-            change: {
-              color: result.isPositive ? '#22C55E' : '#EF4444'
-            },
-            changePercent: {
-              color: result.isPositive ? '#22C55E' : '#EF4444'
-            }
-          }
-        }))
-      };
+          })}%`
+        })));
 
-      // Use daily aggregates instead of minutes
-      const to = new Date();
-      const from = new Date();
-      from.setDate(from.getDate() - 30); // Last 30 days
-      
-      const aggs = await client.stocks.aggregates(
-        'SPY',
-        1, // 1 day intervals
-        'day', // Changed from 'minute' to 'day'
-        from.toISOString().split('T')[0],
-        to.toISOString().split('T')[0]
-      );
-
-      const chartData = {
-        type: "line" as const,
-        title: "S&P 500",
-        description: "30-day price history",
-        data: (aggs.results ?? []).map(bar => ({
-          time: new Date(bar.t).toLocaleDateString([], {
-            month: 'short',
-            day: 'numeric'
-          }),
-          // Round to 2 decimal places when setting the price
-          price: Number(Number(bar.c).toFixed(2)),
-          label: `$${Number(Number(bar.c).toFixed(2)).toLocaleString()}`
-        })).filter(point => point.price),
-        config: {
-          height: 200,
-          colors: ["#3B82F6"],
-          margin: { left: 8, right: 8, top: 20, bottom: 20 },
-          yAxis: {
-            minPadding: 0.1,
-            maxPadding: 0.1,
-            // Simpler formatting for y-axis
-            format: (value: number) => `$${Math.round(value)}`
-          }
-        },
-        dataKeys: {
-          x: "time",
-          y: "price",
-          tooltip: "label"
-        }
-      };
-
-      // Only include chart if we have data
-      const children = [
-        {
-          type: "table",
-          uiData: JSON.stringify(tableData)
-        }
-      ];
-
-      if (chartData.data.length > 0) {
-        children.push({
-          type: "chart",
-          uiData: JSON.stringify(chartData)
+      const chartBuilder = new ChartUIBuilder()
+        .type('line')
+        .title('S&P 500')
+        .description('30-day price history')
+        .chartData(results
+          .filter(result => result.price !== "N/A")
+          .map(result => ({
+            time: result.name,
+            price: Number(result.price)
+          })))
+        .dataKeys({
+          x: 'time',
+          y: 'price',
+          name: 'S&P 500 Price'
         });
-      }
+
+      const cardBuilder = new CardUIBuilder()
+        .addChild(tableBuilder.build())
+        .addChild(chartBuilder.build());
 
       return {
         text: `Market Overview - S&P 500: ${results[1].changePercent}%`,
         data: results,
-        ui: {
-          type: "div",
-          uiData: JSON.stringify({
-            style: {
-              padding: "12px",
-              backgroundColor: "#ffffff",
-              borderRadius: "8px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.12)"
-            }
-          }),
-          children
-        }
+        ui: cardBuilder.build()
       };
     } catch (error) {
       console.error("Error fetching market overview:", error);
