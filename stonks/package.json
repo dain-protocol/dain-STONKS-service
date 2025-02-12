@@ -9,6 +9,11 @@
     "build": "dain build",
     "deploy": "dain deploy"
   },
+  "engines": {
+    "node": "20.x",
+    "pnpm": "10.x"
+  },
+  "packageManager": "pnpm@10.3.0",
   "dependencies": {
     "@dainprotocol/cli": "^1.0.31",
     "@dainprotocol/service-sdk": "^1.0.75",
