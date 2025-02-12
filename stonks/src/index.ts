@@ -15,6 +15,7 @@ import {
   DataGridUIBuilder,
   ChartUIBuilder,
   TableUIBuilder,
+  AlertUIBuilder,
 } from '@dainprotocol/utils';
 
 const getStockPriceConfig: ToolConfig = {
@@ -296,26 +297,22 @@ const getStockDividendsConfig: ToolConfig = {
     const client = restClient(process.env.POLYGON_API_KEY);
     const response = await client.reference.dividends({ ticker, limit });
 
-    const tableData = {
-      columns: [
-        { key: "date", header: "Ex-Dividend Date", type: "text", width: "30%" },
-        { key: "amount", header: "Amount", type: "text", width: "30%" },
-        { key: "payDate", header: "Pay Date", type: "text", width: "40%" }
-      ],
-      rows: response.results.map(div => ({
+    const tableBuilder = new TableUIBuilder()
+      .addColumns([
+        { key: "date", header: "Ex-Dividend Date", type: "text" },
+        { key: "amount", header: "Amount", type: "text" },
+        { key: "payDate", header: "Pay Date", type: "text" }
+      ])
+      .rows(response.results.map(div => ({
         date: new Date(div.ex_dividend_date).toLocaleDateString(),
         amount: `$${div.cash_amount.toFixed(2)}`,
         payDate: new Date(div.pay_date).toLocaleDateString()
-      }))
-    };
+      })));
 
     return {
       text: `Retrieved last ${response.results.length} dividend records for ${ticker}`,
       data: response.results,
-      ui: {
-        type: "table",
-        uiData: JSON.stringify(tableData)
-      }
+      ui: tableBuilder.build()
     };
   }
 };
@@ -340,24 +337,20 @@ const getStockSplitsConfig: ToolConfig = {
     const client = restClient(process.env.POLYGON_API_KEY);
     const response = await client.reference.stockSplits({ ticker, limit });
 
-    const tableData = {
-      columns: [
-        { key: "date", header: "Execution Date", type: "text", width: "40%" },
-        { key: "ratio", header: "Split Ratio", type: "text", width: "60%" }
-      ],
-      rows: response.results.map(split => ({
+    const tableBuilder = new TableUIBuilder()
+      .addColumns([
+        { key: "date", header: "Execution Date", type: "text" },
+        { key: "ratio", header: "Split Ratio", type: "text" }
+      ])
+      .rows(response.results.map(split => ({
         date: new Date(split.execution_date).toLocaleDateString(),
         ratio: `${split.split_to}:${split.split_from}`
-      }))
-    };
+      })));
 
     return {
       text: `Retrieved last ${response.results.length} stock splits for ${ticker}`,
       data: response.results,
-      ui: {
-        type: "table",
-        uiData: JSON.stringify(tableData)
-      }
+      ui: tableBuilder.build()
     };
   }
 };
@@ -462,10 +455,10 @@ const getMarketOverviewWidget: ServicePinnable = {
       return {
         text: "Failed to load market overview",
         data: null,
-        ui: {
-          type: "p",
-          children: "Unable to load market data at this time. Please check your Polygon.io API key and permissions."
-        }
+        ui: new AlertUIBuilder()
+          .withVariant('error')
+          .withMessage('Unable to load market data at this time. Please check your Polygon.io API key and permissions.')
+          .build()
       };
     }
   }
