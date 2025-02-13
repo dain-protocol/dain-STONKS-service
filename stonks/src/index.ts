@@ -16,6 +16,7 @@ import {
   ChartUIBuilder,
   TableUIBuilder,
   AlertUIBuilder,
+  FormUIBuilder,
 } from '@dainprotocol/utils';
 
 const getStockPriceConfig: ToolConfig = {
@@ -33,86 +34,135 @@ const getStockPriceConfig: ToolConfig = {
     .describe("Current stock price information"),
   pricing: { pricePerUse: 0, currency: "USD" },
   handler: async ({ ticker }, agentInfo) => {
-    console.log(`User / Agent ${agentInfo.id} requested price for ${ticker}`);
+    try {
+      console.log(`User / Agent ${agentInfo.id} requested price for ${ticker}`);
 
-    const client = restClient(process.env.POLYGON_API_KEY);
-    
-    // Get last 5 trading days of data
-    const now = new Date();
-    const to = now.toISOString().split('T')[0];  // Use today as end date
-    
-    const fiveDaysAgo = new Date();
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 7); // Go back 7 days to ensure we get 5 trading days
-    const from = fiveDaysAgo.toISOString().split('T')[0];
-    
-    console.log(`Fetching daily data from ${from} to ${to} for ${ticker}`);
-    
-    const aggs = await client.stocks.aggregates(
-      ticker,
-      1,
-      'day',
-      from,
-      to,
-      {
-        sort: 'desc',
-        limit: 10  // Increased limit to make sure we get enough data
+      const client = restClient(process.env.POLYGON_API_KEY);
+      
+      // Validate ticker exists first
+      const tickerDetails = await client.reference.tickerDetails(ticker).catch(() => null);
+      if (!tickerDetails?.results) {
+        return {
+          text: `Invalid ticker symbol: ${ticker}. Please check the symbol and try again.`,
+          data: null,
+          ui: new AlertUIBuilder()
+            .withVariant('error')
+            .withMessage(`Could not find ticker symbol "${ticker}". Please verify the symbol and try again.`)
+            .build()
+        };
       }
-    );
+      
+      // Get last 5 trading days of data
+      const now = new Date();
+      const to = now.toISOString().split('T')[0];
+      
+      const fiveDaysAgo = new Date();
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 7);
+      const from = fiveDaysAgo.toISOString().split('T')[0];
+      
+      console.log(`Fetching daily data from ${from} to ${to} for ${ticker}`);
+      
+      const aggs = await client.stocks.aggregates(
+        ticker,
+        1,
+        'day',
+        from,
+        to,
+        {
+          sort: 'desc',
+          limit: 10
+        }
+      );
 
-    const latestData = aggs.results?.[0];
-    if (!latestData) {
-      throw new Error(`No data available for ${ticker}`);
+      const latestData = aggs.results?.[0];
+      if (!latestData) {
+        return {
+          text: `No recent trading data available for ${ticker}`,
+          data: null,
+          ui: new AlertUIBuilder()
+            .withVariant('warning')
+            .withMessage(`No recent trading data available for ${ticker}. This could be due to a trading halt or delisting.`)
+            .build()
+        };
+      }
+
+      const change = latestData.c - latestData.o;
+      const changePercent = ((change) / latestData.o * 100).toFixed(2);
+
+      const chartBuilder = new ChartUIBuilder()
+        .type('line')
+        .title(`${ticker} 5-Day Price History`)
+        .description('Price movement over the last 5 trading days')
+        .chartData([...(aggs.results ?? [])].reverse().map(bar => ({
+          time: new Date(bar.t).toLocaleDateString(),
+          price: bar.c
+        })))
+        .dataKeys({
+          x: 'time',
+          y: 'price',
+          name: 'Price'
+        })
+        .trend(parseFloat(changePercent), `${changePercent}% change`);
+
+      const tableBuilder = new TableUIBuilder()
+        .addColumns([
+          { key: 'metric', header: 'Metric', type: 'text' },
+          { key: 'value', header: 'Value', type: 'text' }
+        ])
+        .rows([
+          { metric: 'Volume', value: latestData.v.toLocaleString() },
+          { metric: 'Open', value: `$${latestData.o.toFixed(2)}` },
+          { metric: 'High', value: `$${latestData.h.toFixed(2)}` },
+          { metric: 'Low', value: `$${latestData.l.toFixed(2)}` },
+          { metric: 'VWAP', value: `$${latestData.vw.toFixed(2)}` }
+        ]);
+
+      const cardBuilder = new CardUIBuilder()
+        .title(`${ticker} Stock Price and Stats`)
+        .content(`${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`)
+        .addChild(chartBuilder.build())
+        .addChild(tableBuilder.build())
+        .onConfirm({
+          tool: "get-stock-news",
+          params: {
+            ticker: ticker,
+            limit: 5
+          },
+          paramSchema:{
+              ticker: {
+                type: "string",
+                description: "Stock ticker symbol (e.g. AAPL)"
+              },
+              limit: {
+                type: "number",
+                description: "Number of news items to fetch (default 5)"
+              }
+          }
+        });
+
+      return {
+        text: `${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`,
+        data: {
+          price: latestData.c,
+          high: latestData.h,
+          low: latestData.l,
+          volume: latestData.v,
+          change,
+          changePercent: parseFloat(changePercent),
+        },
+        ui: cardBuilder.build()
+      };
+    } catch (error) {
+      console.error(`Error fetching data for ${ticker}:`, error);
+      return {
+        text: `Failed to fetch data for ${ticker}`,
+        data: null,
+        ui: new AlertUIBuilder()
+          .withVariant('error')
+          .withMessage(`Unable to fetch stock data for ${ticker}. Please try again later or contact support if the issue persists.`)
+          .build()
+      };
     }
-
-    const change = latestData.c - latestData.o;
-    const changePercent = ((change) / latestData.o * 100).toFixed(2);
-
-    const chartBuilder = new ChartUIBuilder()
-      .type('line')
-      .title(`${ticker} 5-Day Price History`)
-      .description('Price movement over the last 5 trading days')
-      .chartData([...(aggs.results ?? [])].reverse().map(bar => ({
-        time: new Date(bar.t).toLocaleDateString(),
-        price: bar.c
-      })))
-      .dataKeys({
-        x: 'time',
-        y: 'price',
-        name: 'Price'
-      })
-      .trend(parseFloat(changePercent), `${changePercent}% change`);
-
-    const tableBuilder = new TableUIBuilder()
-      .addColumns([
-        { key: 'metric', header: 'Metric', type: 'text' },
-        { key: 'value', header: 'Value', type: 'text' }
-      ])
-      .rows([
-        { metric: 'Volume', value: latestData.v.toLocaleString() },
-        { metric: 'Open', value: `$${latestData.o.toFixed(2)}` },
-        { metric: 'High', value: `$${latestData.h.toFixed(2)}` },
-        { metric: 'Low', value: `$${latestData.l.toFixed(2)}` },
-        { metric: 'VWAP', value: `$${latestData.vw.toFixed(2)}` }
-      ]);
-
-    const cardBuilder = new CardUIBuilder()
-      .title(`${ticker} Stock Price and Stats`)
-      .content(`${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`)
-      .addChild(chartBuilder.build())
-      .addChild(tableBuilder.build());
-
-    return {
-      text: `${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`,
-      data: {
-        price: latestData.c,
-        high: latestData.h,
-        low: latestData.l,
-        volume: latestData.v,
-        change,
-        changePercent: parseFloat(changePercent),
-      },
-      ui: cardBuilder.build()
-    };
   },
 };
 
@@ -217,6 +267,7 @@ const getStockChartConfig: ToolConfig = {
         date: new Date(result.t).toLocaleDateString(),
         price: result.c
       })))
+      .setRenderMode('page')
       .dataKeys({
         x: 'date',
         y: 'price',
@@ -229,7 +280,7 @@ const getStockChartConfig: ToolConfig = {
       data: {
         results: response.results,
       },
-      ui: chartBuilder.build()
+      ui: [chartBuilder.build()]
     };
   },
 };
@@ -363,17 +414,17 @@ const getMarketOverviewWidget: ServicePinnable = {
   label: "Markets",
   icon: "chart-line",
   getWidget: async () => {
-    const client = restClient(process.env.POLYGON_API_KEY);
-    
-    // Using ETFs that track major indices - these work with basic plan
-    const indices = [
-      { ticker: "DIA", name: "Dow Jones" },
-      { ticker: "SPY", name: "S&P 500" },
-      { ticker: "QQQ", name: "NASDAQ" },
-      { ticker: "IWM", name: "Russell 2000" }
-    ];
-
     try {
+      const client = restClient(process.env.POLYGON_API_KEY);
+      
+      // Using ETFs that track major indices - these work with basic plan
+      const indices = [
+        { ticker: "DIA", name: "Dow Jones" },
+        { ticker: "SPY", name: "S&P 500" },
+        { ticker: "QQQ", name: "NASDAQ" },
+        { ticker: "IWM", name: "Russell 2000" }
+      ];
+
       const results = await Promise.all(
         indices.map(async ({ ticker, name }) => {
           const prevClose = await client.stocks.previousClose(ticker);
@@ -425,6 +476,24 @@ const getMarketOverviewWidget: ServicePinnable = {
           })}%`
         })));
 
+      const formBuilder = new FormUIBuilder()
+        .title('Get Stock Price')
+        .description('Enter a stock symbol to get its current price')
+        .addField({
+          name: 'ticker',
+          label: 'Stock Symbol',
+          type: 'string',
+          widget: 'text',
+          description: 'Enter stock ticker (e.g. AAPL)',
+          required: true,
+        })
+        .onSubmit({
+          tool: 'get-stock-price',
+          paramSchema: {
+            ticker: { type: 'string' }
+          }
+        })
+
       const chartBuilder = new ChartUIBuilder()
         .type('line')
         .title('S&P 500')
@@ -442,6 +511,7 @@ const getMarketOverviewWidget: ServicePinnable = {
         });
 
       const cardBuilder = new CardUIBuilder()
+        .addChild(formBuilder.build())
         .addChild(tableBuilder.build())
         .addChild(chartBuilder.build());
 
@@ -451,13 +521,37 @@ const getMarketOverviewWidget: ServicePinnable = {
         ui: cardBuilder.build()
       };
     } catch (error) {
-      console.error("Error fetching market overview:", error);
+      console.error("Error in market overview widget:", error);
       return {
         text: "Failed to load market overview",
         data: null,
-        ui: new AlertUIBuilder()
-          .withVariant('error')
-          .withMessage('Unable to load market data at this time. Please check your Polygon.io API key and permissions.')
+        ui: new CardUIBuilder()
+          .addChild(
+            new AlertUIBuilder()
+              .withVariant('error')
+              .withMessage('Unable to load market data. Please check your connection and try again.')
+              .build()
+          )
+          .addChild(
+            new FormUIBuilder()
+              .title('Get Stock Price')
+              .description('Enter a stock symbol to get its current price')
+              .addField({
+                name: 'ticker',
+                label: 'Stock Symbol',
+                type: 'string',
+                widget: 'text',
+                description: 'Enter stock ticker (e.g. AAPL)',
+                required: true,
+              })
+              .onSubmit({
+                tool: 'get-stock-price',
+                paramSchema: {
+                  ticker: { type: 'string' }
+                }
+              })
+              .build()
+          )
           .build()
       };
     }

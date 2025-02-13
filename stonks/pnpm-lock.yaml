@@ -11,12 +11,15 @@ importers:
       '@dainprotocol/cli':
         specifier: ^1.0.31
         version: 1.0.43(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.19.10))(svelte@5.19.10)(typescript@5.7.3)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))(zod@3.24.2)
+      '@dainprotocol/components':
+        specifier: ^0.0.13
+        version: 0.0.13
       '@dainprotocol/service-sdk':
         specifier: ^1.0.75
         version: 1.0.85(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.19.10))(svelte@5.19.10)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))
       '@dainprotocol/utils':
-        specifier: ^0.0.33
-        version: 0.0.33(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.19.10))(svelte@5.19.10)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))
+        specifier: ^0.0.40
+        version: 0.0.40(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.19.10))(svelte@5.19.10)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))
       '@polygon.io/client-js':
         specifier: ^7.3.2
         version: 7.3.2
@@ -215,6 +218,9 @@ packages:
     resolution: {integrity: sha512-GE2njrmoWzaEMqVra9HcolShxsQ3iv7sJhZ9i7zb1krrSGOuCwCSSCRFsOWTmxe58eu2d30l8aPNoCRY+JifOw==}
     hasBin: true
 
+  '@dainprotocol/components@0.0.13':
+    resolution: {integrity: sha512-kyJbIu5tDANHHPYFiZJ4Z58eBiIFrNAgomqNkhUdKVYx7gtb6o904FfHSScKRPFa7NjTrzlVZGHtyro5lz0jhg==}
+
   '@dainprotocol/service-sdk@1.0.85':
     resolution: {integrity: sha512-kRUUZSrD7XX+5EmDQcRoy6oOefj1ziX+bgltmR5eykGPIHMu8pSlGNcGEbSqY+tZ8OobN7IXSD023LuEjCPJFA==}
 
@@ -222,8 +228,8 @@ packages:
     resolution: {integrity: sha512-VsJAbrwyEjGhlQstv+TwyBrkGh4c3wFttlL1wOlofbQD3zxytpQARmyA+Ip6lo+9jr0r2QYKUjJ0vabRwMUfVg==}
     engines: {node: 20.7.0}
 
-  '@dainprotocol/utils@0.0.33':
-    resolution: {integrity: sha512-+5BwZ1s8NOHvrJOb+dlC5VOUledONh2lEXgKypzurODB2AnZmj3VK04kOnVcicay/kPxiR426rJaW5LCzF2ddw==}
+  '@dainprotocol/utils@0.0.40':
+    resolution: {integrity: sha512-IaEYQ58GSDlG4A+ak4RZE2WHZAvIrNpcyB9LHL2h+6SprjBUuKcrJrB2mOQnS+oBQstLWSI7XVc+hjL+Y+i+wA==}
 
   '@esbuild/aix-ppc64@0.23.1':
     resolution: {integrity: sha512-6VhYk1diRqrhBAqpJEdjASR/+WVRtfjpqKuNw11cLiaWpAT/Uu+nokB+UJnevzy/P9C/ty6AOe0dwueMrGh/iQ==}
@@ -2035,6 +2041,8 @@ snapshots:
       - vue
       - zod
 
+  '@dainprotocol/components@0.0.13': {}
+
   '@dainprotocol/service-sdk@1.0.85(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.19.10))(svelte@5.19.10)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))':
     dependencies:
       '@ai-sdk/anthropic': 0.0.23(zod@3.24.2)
@@ -2113,7 +2121,7 @@ snapshots:
       - utf-8-validate
       - vue
 
-  '@dainprotocol/utils@0.0.33(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.19.10))(svelte@5.19.10)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))':
+  '@dainprotocol/utils@0.0.40(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.19.10))(svelte@5.19.10)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))':
     dependencies:
       '@dainprotocol/service-sdk': 1.0.85(bufferutil@4.0.9)(react@19.0.0)(sswr@2.1.0(svelte@5.19.10))(svelte@5.19.10)(utf-8-validate@5.0.10)(vue@3.5.13(typescript@5.7.3))
       ioredis: 5.5.0

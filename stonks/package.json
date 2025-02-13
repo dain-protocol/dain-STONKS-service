@@ -16,8 +16,9 @@
   "packageManager": "pnpm@10.3.0",
   "dependencies": {
     "@dainprotocol/cli": "^1.0.31",
+    "@dainprotocol/components": "^0.0.13",
     "@dainprotocol/service-sdk": "^1.0.75",
-    "@dainprotocol/utils": "^0.0.33",
+    "@dainprotocol/utils": "^0.0.40",
     "@polygon.io/client-js": "^7.3.2",
     "@types/express": "^4.17.13",
     "@types/node": "^22.5.4",
