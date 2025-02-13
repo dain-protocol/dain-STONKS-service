@@ -118,6 +118,7 @@ const getStockPriceConfig: ToolConfig = {
         ]);
 
       const cardBuilder = new CardUIBuilder()
+        .setRenderMode('page')
         .title(`${ticker} Stock Price and Stats`)
         .content(`${ticker} is trading at $${latestData.c.toFixed(2)}. Today's change: ${changePercent}%`)
         .addChild(chartBuilder.build())
@@ -197,6 +198,7 @@ const getStockNewsConfig: ToolConfig = {
     }));
 
     const tableBuilder = new TableUIBuilder()
+      .setRenderMode('page')
       .addColumns([
         { key: 'publisher', header: 'Source', type: 'text' },
         { key: 'title', header: 'Title', type: 'text' },
@@ -307,6 +309,7 @@ const getStockTickerDetailsConfig: ToolConfig = {
     const details = response.results;
 
     const tableBuilder = new TableUIBuilder()
+      .setRenderMode('page')
       .addColumns([
         { key: 'field', header: 'Field', type: 'text' },
         { key: 'value', header: 'Value', type: 'text' }
@@ -349,6 +352,7 @@ const getStockDividendsConfig: ToolConfig = {
     const response = await client.reference.dividends({ ticker, limit });
 
     const tableBuilder = new TableUIBuilder()
+      .setRenderMode('page')
       .addColumns([
         { key: "date", header: "Ex-Dividend Date", type: "text" },
         { key: "amount", header: "Amount", type: "text" },
@@ -389,6 +393,7 @@ const getStockSplitsConfig: ToolConfig = {
     const response = await client.reference.stockSplits({ ticker, limit });
 
     const tableBuilder = new TableUIBuilder()
+      .setRenderMode('page')
       .addColumns([
         { key: "date", header: "Execution Date", type: "text" },
         { key: "ratio", header: "Split Ratio", type: "text" }
